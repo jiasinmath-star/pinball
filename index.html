@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#10143b" />
+    <meta
+      name="description"
+      content="七層彈珠台互動統計，可點選落點投珠，或開啟隨機連續落珠。"
+    />
+    <title>彈珠統計互動實驗室</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+
+    <header class="hero shell">
+      <div>
+        <p class="eyebrow"><span></span> 大珠小珠落玉盤 · 統計活動</p>
+        <h1>彈珠統計<br /><strong>互動實驗室</strong></h1>
+        <p class="hero-copy">
+          點選彈珠台下方數字可投下一顆，也能開啟隨機連續落珠。每顆彈珠都會經過 7 層釘左右彈跳。
+        </p>
+      </div>
+      <div class="hero-actions" aria-label="資料操作">
+        <button class="button button-ghost" id="demoButton" type="button">載入示範</button>
+        <button class="button button-ghost" id="undoButton" type="button" disabled>復原上一步</button>
+        <button class="button button-ghost" id="exportButton" type="button">匯出 CSV</button>
+        <button class="button button-danger" id="clearButton" type="button">清空資料</button>
+      </div>
+    </header>
+
+    <main class="shell page-grid">
+      <section class="card board-card" aria-labelledby="boardTitle">
+        <div class="scope-row">
+          <div>
+            <p class="section-kicker">7 層彈珠台 · 即時統計圖</p>
+            <h2 id="boardTitle">全班彈珠分布</h2>
+          </div>
+          <div class="board-tools">
+            <button
+              class="random-drop-toggle"
+              id="randomDropButton"
+              type="button"
+              aria-pressed="false"
+            >
+              <span class="random-drop-icon" aria-hidden="true"></span>
+              <span id="randomDropLabel">隨機連續落珠</span>
+            </button>
+            <button
+              class="sound-toggle"
+              id="soundButton"
+              type="button"
+              aria-pressed="false"
+              aria-label="開啟落珠音效"
+            >
+              <span class="sound-icon" aria-hidden="true"></span>
+              <span id="soundLabel">音效關閉</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="group-tabs" id="groupTabs" aria-label="統計範圍"></div>
+
+        <div class="metric-grid" aria-label="統計摘要">
+          <article class="metric metric-total">
+            <p>目前彈珠總數</p>
+            <strong id="totalMetric">0</strong>
+            <span id="totalGoalMetric">顆</span>
+          </article>
+          <article class="metric">
+            <p>最高落點</p>
+            <strong id="peakMetric">—</strong>
+            <span id="peakDetail">等待資料</span>
+          </article>
+          <article class="metric metric-wide">
+            <p>圖形觀察</p>
+            <strong id="shapeMetric">準備開始</strong>
+            <span id="shapeDetail">輸入第一筆資料後，這裡會提示分布特徵。</span>
+          </article>
+        </div>
+
+        <div class="chart-shell" id="chartShell">
+          <div class="chute" aria-hidden="true"><span></span><span></span><span></span></div>
+          <canvas
+            id="marbleCanvas"
+            role="img"
+            aria-label="目前還沒有彈珠資料"
+          ></canvas>
+          <div class="empty-chart" id="emptyChart">
+            <div class="empty-marble" aria-hidden="true"></div>
+            <p>尚未記錄彈珠</p>
+            <span>可填寫右側數量、點選下方落點，或開啟隨機連續落珠。</span>
+          </div>
+        </div>
+
+        <div class="target-axis" id="targetAxis" aria-label="點選落點投下一顆彈珠"></div>
+        <p class="axis-help">點選下方數字，可讓目前選取的組別投下一顆彈珠</p>
+        <div class="legend" id="chartLegend" aria-label="組別顏色圖例"></div>
+        <p class="chart-note" id="chartNote">
+          點選落點會直接增加 1 顆；隨機連續模式會依 7 次左右碰撞，自然形成中央較高的分布。
+        </p>
+      </section>
+
+      <aside class="control-column" aria-label="彈珠輸入工具">
+        <section class="card control-card quick-card" aria-labelledby="quickTitle">
+          <div class="card-heading">
+            <div>
+              <p class="section-kicker">右側直接輸入</p>
+              <h2 id="quickTitle">輸入各落點彈珠量</h2>
+            </div>
+            <span class="live-pill"><i></i> 直接輸入</span>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span>組別</span>
+              <select id="quickGroup"></select>
+            </label>
+          </div>
+
+          <div class="group-progress" aria-label="目前組別彈珠進度">
+            <div>
+              <span>本組待確認總數</span>
+              <strong id="quickProgressText">0 顆</strong>
+            </div>
+          </div>
+
+          <div class="direct-input-grid" id="targetInputs" aria-label="直接輸入八個落點的彈珠量"></div>
+          <button class="button button-primary confirm-submit" id="confirmGroupButton" type="button" disabled>
+            確定並開始落珠
+          </button>
+          <p class="form-hint" id="quickHint">直接輸入第1組各落點數量，再按下確定。</p>
+        </section>
+      </aside>
+
+      <section class="card roster-card" aria-labelledby="rosterTitle">
+        <div class="roster-heading">
+          <div>
+            <p class="section-kicker">彙整紀錄</p>
+            <h2 id="rosterTitle">每個組別的彈珠量</h2>
+          </div>
+          <div class="roster-summary" id="rosterSummary">0／8 組完成</div>
+        </div>
+
+        <div class="table-wrap" id="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">組別</th>
+                <th scope="col">左 50</th>
+                <th scope="col">左 30</th>
+                <th scope="col">左 20</th>
+                <th scope="col">左 10</th>
+                <th scope="col">右 10</th>
+                <th scope="col">右 20</th>
+                <th scope="col">右 30</th>
+                <th scope="col">右 50</th>
+                <th scope="col">總計</th>
+                <th scope="col">操作</th>
+              </tr>
+            </thead>
+            <tbody id="groupRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="shell footer">
+      <p>資料會自動保存在這台裝置的瀏覽器中。</p>
+      <p>8 個組別，彈珠數量無上限</p>
+    </footer>
+
+    <dialog id="clearDialog" class="confirm-dialog">
+      <form method="dialog">
+        <div class="dialog-marble" aria-hidden="true"></div>
+        <h2>要清空全部資料嗎？</h2>
+        <p>8 個組別的彈珠紀錄都會歸零。清空後仍可立即按「復原上一步」找回。</p>
+        <div class="dialog-actions">
+          <button class="button button-ghost" value="cancel">先不要</button>
+          <button class="button button-danger" id="confirmClear" value="confirm">確認清空</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <div class="sr-only" id="liveRegion" aria-live="polite"></div>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
